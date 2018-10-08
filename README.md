@@ -1,4 +1,4 @@
-#B Field Meter
+# B Field Meter
 
 Static B Field meter based on QMC5883 and Raspberry Pi 3.
 
