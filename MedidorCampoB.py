@@ -325,6 +325,8 @@ class averageFilter ():
 class DataStructure ():
     def __init__(self, *args, **kwargs):
         # Graph lists
+        self.xGraphList = []
+        self.yGraphList = []
         self.zGraphList = []
         self.timeGraphList = []
         
@@ -360,12 +362,24 @@ class DataStructure ():
         
     def zAppend (self, data):
         self.zGraphList.append(data)
+        
+    def yAppend (self, data):
+        self.yGraphList.append(data)
+     
+    def xAppend (self, data):
+        self.xGraphList.append(data)
 		
     def timeAppend (self, data):
         self.timeGraphList.append(data)
 		
     def popZList(self):
         self.zGraphList.pop(0)
+        
+    def popYList(self):
+        self.yGraphList.pop(0)
+    
+    def popXList(self):
+        self.xGraphList.pop(0)
 		
     def popTimeList(self):
         self.timeGraphList.pop(0)
@@ -407,7 +421,10 @@ def winUpdate (app):
 def animate(i):
     a.clear()
     
-    a.plot(dataStruct.timeGraphList, dataStruct.zGraphList)
+    a.plot(dataStruct.timeGraphList, dataStruct.xGraphList, 
+        dataStruct.timeGraphList, dataStruct.yGraphList,
+        dataStruct.timeGraphList, dataStruct.zGraphList)
+    a.legend(("Eje X", "Eje Y", "Eje Z"), loc="upper right")
     a.set_title("Campo B en eje Z")
     a.set(xlabel='Tiempo [S]', ylabel='[uT]')
     a.axis(ymin=0, ymax=53)
@@ -436,7 +453,9 @@ def readZerosFromFile ():
     
     
 def dataGraph (axis, timeStamp):
-    	
+    
+    x_axis = axis[0]
+    y_axis = axis[1]	
     z_axis = axis[2]
     tmp = float(timeStamp.seconds + (timeStamp.microseconds / 1000000))
     
@@ -444,13 +463,21 @@ def dataGraph (axis, timeStamp):
         dataStruct.timeAppend(tmp)
         #z_axis_g=float('%.1f'%z_axis)									#set decimals to a requested value for graph
         #dataStruct.zAppend(z_axis_g)
+        dataStruct.xAppend(abs(x_axis))
+        dataStruct.yAppend(abs(y_axis))
         dataStruct.zAppend(abs(z_axis))
+        
+        
     else:
         dataStruct.popTimeList()
         dataStruct.timeAppend(tmp)
+        dataStruct.popXList()
+        dataStruct.popYList()
         dataStruct.popZList()
         #z_axis_g=float('%.1f'%z_axis)                                  #set decimals to a requested value for graph
         #dataStruct.zAppend(z_axis_g)
+        dataStruct.xAppend(abs(x_axis))
+        dataStruct.yAppend(abs(y_axis))
         dataStruct.zAppend(abs(z_axis))
     
     #print( timeStamp.seconds, ":", timeStamp.microseconds)				# For debugging
