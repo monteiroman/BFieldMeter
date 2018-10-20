@@ -47,6 +47,7 @@ a = f.add_subplot(111)
 
 
 
+
 # Macros
 GRAPHLENGTH = 50         # x length
 ANIM_INTVL = 1000        # Animation Interval in mS
@@ -176,9 +177,9 @@ class PageOne(tk.Frame):
     def refreshLabel (self):
         axis = dataStruct.getAxis()
         
-        self.msg_x.set(" X: {:.0f}".format(axis[0]) + " uT")
-        self.msg_y.set(" Y: {:.0f}".format(axis[1]) + " uT")
-        self.msg_z.set(" Z: {:.0f}".format(axis[2]) + " uT")
+        self.msg_x.set(" X: {:.2f}".format(axis[0]) + " uT")
+        self.msg_y.set(" Y: {:.2f}".format(axis[1]) + " uT")
+        self.msg_z.set(" Z: {:.2f}".format(axis[2]) + " uT")
         
     
     
@@ -262,9 +263,9 @@ class Qmc():
         
         
     def getAxis (self):
-        xAux = float('%.0f'%(self.ReadByte(address,0x00) * self.correction))
-        yAux = float('%.0f'%(self.ReadByte(address,0x02) * self.correction))
-        zAux = float('%.0f'%(self.ReadByte(address,0x04) * self.correction))
+        xAux = float('%.2f'%(self.ReadByte(address,0x00) * self.correction))
+        yAux = float('%.2f'%(self.ReadByte(address,0x02) * self.correction))
+        zAux = float('%.2f'%(self.ReadByte(address,0x04) * self.correction))
         avgAux = self.myfilter.filterAvg([xAux, yAux, zAux])
         self.x_raw = avgAux[0]
         self.y_raw = avgAux[1]
@@ -312,9 +313,9 @@ class averageFilter ():
             self.ySum = self.ySum + self.yAverageArray[i]
             self.zSum = self.zSum + self.zAverageArray[i]
         
-        self.average[0] = float('%.0f'%(self.xSum / AVERAGE_ARRAY_SIZE))
-        self.average[1] = float('%.0f'%(self.ySum / AVERAGE_ARRAY_SIZE))
-        self.average[2] = float('%.0f'%(self.zSum / AVERAGE_ARRAY_SIZE))
+        self.average[0] = float('%.2f'%(self.xSum / AVERAGE_ARRAY_SIZE))
+        self.average[1] = float('%.2f'%(self.ySum / AVERAGE_ARRAY_SIZE))
+        self.average[2] = float('%.2f'%(self.zSum / AVERAGE_ARRAY_SIZE))
     
         return(self.average)
 
@@ -409,6 +410,7 @@ def animate(i):
     a.plot(dataStruct.timeGraphList, dataStruct.zGraphList)
     a.set_title("Campo B en eje Z")
     a.set(xlabel='Tiempo [S]', ylabel='[uT]')
+    a.axis(ymin=0, ymax=53)
 
 
 
@@ -440,12 +442,16 @@ def dataGraph (axis, timeStamp):
     
     if len(dataStruct.timeGraphList) <= GRAPHLENGTH:
         dataStruct.timeAppend(tmp)
-        dataStruct.zAppend(z_axis)
+        #z_axis_g=float('%.1f'%z_axis)									#set decimals to a requested value for graph
+        #dataStruct.zAppend(z_axis_g)
+        dataStruct.zAppend(abs(z_axis))
     else:
         dataStruct.popTimeList()
         dataStruct.timeAppend(tmp)
         dataStruct.popZList()
-        dataStruct.zAppend(z_axis)
+        #z_axis_g=float('%.1f'%z_axis)                                  #set decimals to a requested value for graph
+        #dataStruct.zAppend(z_axis_g)
+        dataStruct.zAppend(abs(z_axis))
     
     #print( timeStamp.seconds, ":", timeStamp.microseconds)				# For debugging
 
