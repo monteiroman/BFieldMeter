@@ -77,6 +77,8 @@ class BMeasureApp(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame(StartPage)
+        
+        self.holdStatus = 1
 
 
     def show_frame(self, cont):
@@ -86,6 +88,15 @@ class BMeasureApp(tk.Tk):
 
     def quitProgram (self):
         self.tk.destroy()
+        
+    def holdMeasure (self):
+        if self.holdStatus:
+            self.holdStatus=0
+        else:
+            self.holdStatus=1
+			
+    def getHoldStatus (self):
+        return self.holdStatus
 
     def setQMCZeros (self):
         dataStruct.setZeros()
@@ -145,8 +156,8 @@ class PageOne(tk.Frame):
 #---------------making size for the graph
         self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
         self.labelZ.grid(row=5, column=0, sticky="nsew")
-        self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
-        self.labelZ.grid(row=6, column=0, sticky="nsew")
+        self.holdButton = ttk.Button(self.valuesFrame, text="Hold", padding=(5,5), style='my.TButton', command=lambda: controller.holdMeasure())
+        self.holdButton.grid(row=6, column=0, sticky="nsew")
         self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
         self.labelZ.grid(row=7, column=0, sticky="nsew")
         self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
@@ -506,7 +517,9 @@ def main():
 
         dataGraph(dataStruct.getAxis(), dataStruct.getElapsedTime())
 
-        app.frames[PageOne].refreshLabel()
+        aux = app.getHoldStatus()
+        if aux:
+            app.frames[PageOne].refreshLabel()
         winUpdate (app)
 
         #end = time.time()												# For debugging
