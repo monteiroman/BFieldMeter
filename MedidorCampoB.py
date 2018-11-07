@@ -40,18 +40,20 @@ address = 0x0D
 
 LARGE_FONT = ("Verdana", 24)
 MEDIUM_FONT = ("Verdana", 18)
+SMALL_FONT = ("Verdana", 14)
 style.use("ggplot")
 
-f = Figure(figsize=(8,3), dpi=80)
+f = Figure(figsize=(7,3), dpi=78)
 a = f.add_subplot(111)
 
 
 
 
 # Macros
-GRAPHLENGTH = 50         # x length
+GRAPHLENGTH = 50         # Quantity of points in the x axis of thee graph
 ANIM_INTVL = 1000        # Animation Interval in mS
-AVERAGE_ARRAY_SIZE = 50  #
+AVERAGE_ARRAY_SIZE = 50  # Array size of the average filter
+SAVEMEASURELENGTH = 50   # Quantity of measures saved in the file
 
 #_________________________CLASSES DEFINITIONS________________________________#
 #--------------------------------------------------------------------------------------#
@@ -78,11 +80,10 @@ class BMeasureApp(tk.Tk):
 
         self.show_frame(StartPage)
         
-        self.holdStatus = 1
+        self.holdStatus = True
 
 
     def show_frame(self, cont):
-
         frame = self.frames[cont]
         frame.tkraise()
 
@@ -91,15 +92,19 @@ class BMeasureApp(tk.Tk):
         
     def holdMeasure (self):
         if self.holdStatus:
-            self.holdStatus=0
+            self.holdStatus = False
         else:
-            self.holdStatus=1
+            self.holdStatus = True
 			
     def getHoldStatus (self):
         return self.holdStatus
 
     def setQMCZeros (self):
         dataStruct.setZeros()
+        
+    def saveBtnClicked (self):
+        dataStruct.setSaveDataStatus(True)
+		
 
 
 class StartPage(tk.Frame):
@@ -143,6 +148,8 @@ class PageOne(tk.Frame):
         self.msg_y.set("---")
         self.msg_z = StringVar()
         self.msg_z.set("---")
+        self.msg_saveStatus = StringVar()
+        self.msg_saveStatus.set("    Listo para guardar")
 
         self.separator = ttk.Label(self.valuesFrame, text="----------------", font=LARGE_FONT)
         self.separator.grid(row=1, column=0, sticky="nsew")
@@ -160,18 +167,18 @@ class PageOne(tk.Frame):
         self.holdButton.grid(row=6, column=0, sticky="nsew")
         self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
         self.labelZ.grid(row=7, column=0, sticky="nsew")
-        self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
-        self.labelZ.grid(row=8, column=0, sticky="nsew")
+        self.measureButton = ttk.Button(self.valuesFrame, text="Guardar mediciones", padding=(5,5), style='my.TButton', command=lambda: controller.saveBtnClicked())
+        self.measureButton.grid(row=8, column=0, sticky="nsew")
         self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
         self.labelZ.grid(row=9, column=0, sticky="nsew")
-        self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
-        self.labelZ.grid(row=10, column=0, sticky="nsew")
+        self.saveStatusLabel = ttk.Label(self.valuesFrame, textvariable=self.msg_saveStatus, font=SMALL_FONT)
+        self.saveStatusLabel.grid(row=10, column=0, sticky="nsew")
         self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
         self.labelZ.grid(row=11, column=0, sticky="nsew")
         self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
         self.labelZ.grid(row=12, column=0, sticky="nsew")
-        self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
-        self.labelZ.grid(row=13, column=0, sticky="nsew")
+        #self.labelZ = ttk.Label(self.valuesFrame, text=" ", font=MEDIUM_FONT)
+        #self.labelZ.grid(row=13, column=0, sticky="nsew")
 #---------------
 
         canvas = FigureCanvasTkAgg(f, self)
@@ -191,6 +198,11 @@ class PageOne(tk.Frame):
         self.msg_x.set(" X: {:.2f}".format(axis[0]) + " uT")
         self.msg_y.set(" Y: {:.2f}".format(axis[1]) + " uT")
         self.msg_z.set(" Z: {:.2f}".format(axis[2]) + " uT")
+        
+        if dataStruct.getSaveDataStatus():
+            self.msg_saveStatus.set("   Guardando...")
+        else:
+            self.msg_saveStatus.set("   Listo para guardar")
 
 
 
@@ -212,8 +224,9 @@ class Qmc():
         #self.correction = 0.0244140625       # 16*1000000/(65536*10000)
                                              # --> ([rango_en_G * paso_a_uT / [nCuentas_ADC * Gauss_a_Tesla])
                                              #
-        self.correction = 0.033333333        # or if we use the info from de QMC's datasheet:
-                                             # 1000000/(10000*3000)
+        #self.correction = 0.033333333        # or if we use the info from de QMC's datasheet:
+                                             # 1000000/(10000*3000)  <-- +-8G
+        self.correction = 0.00833333333      # 1000000/(10000*12000)  <-- +-2G
 
 
     # Writes the byte "data" in the device at "addr" at the "reg" register
@@ -245,7 +258,7 @@ class Qmc():
         time.sleep(.1)
 
         # Control register 1 (0x09)
-        self.WriteByteData(address, 0x09, 0x1D)                 # Continuous Measure Mode - 200Hz Output Data Rate - 8G Full Scale - Over Sample Rate 512
+        self.WriteByteData(address, 0x09, 0x0D)                 # Continuous Measure Mode - 200Hz Output Data Rate - 2G Full Scale (0x1D if +-8G)- Over Sample Rate 512
         time.sleep(.1)
         print("QMC Configured...")
 
@@ -354,6 +367,9 @@ class DataStructure ():
         self.end_time = 0
         self.start_time = 0
         self.timeStamp = 0
+        self.saveDataStatus = False
+        self.measureQuantity = 0
+        self.measureFile = 0
 
     def setAxis (self, axis):
         self.x = axis[0]
@@ -416,6 +432,12 @@ class DataStructure ():
         self.x_zero = aux_x
         self.y_zero = aux_y
         self.z_zero = aux_z
+        
+    def getSaveDataStatus (self):
+        return self.saveDataStatus
+		
+    def setSaveDataStatus (self, value):
+        self.saveDataStatus = value
 
 
 dataStruct = DataStructure ()
@@ -445,7 +467,7 @@ def animate(i):
 def saveZeros(x, y, z):
     zeroFile = open("/home/pi/medidor_campo_b/zeros.txt", "w")
     zeroFile.write(str(x) + "," + str(y) + "," + str(z))
-    zeroFile.close
+    zeroFile.close()
 
 
 
@@ -458,7 +480,7 @@ def readZerosFromFile ():
     y = float(y)
     z = float(z)
 
-    zeroFile.close
+    zeroFile.close()
     return (x,y,z)
 
 
@@ -493,7 +515,21 @@ def dataGraph (axis, timeStamp):
 
     #print( timeStamp.seconds, ":", timeStamp.microseconds)				# For debugging
 
-
+def SaveMeasureData (axis):
+    if dataStruct.measureQuantity == 0: 									# Only open it if there is the first measure
+        dataStruct.measureFile = open("/home/pi/medidor_campo_b/data.txt", "w+")
+    
+    dataStruct.measureFile.write(str(axis[0]) + "," + str(axis[1]) + "," + str(axis[2]) + "\n")
+    dataStruct.measureQuantity = dataStruct.measureQuantity +1
+    
+    if dataStruct.measureQuantity == SAVEMEASURELENGTH:
+        dataStruct.setSaveDataStatus(False)
+        dataStruct.measureQuantity = 0
+        dataStruct.measureFile.close()
+        return
+        
+        
+        
 
 def main():
     app = BMeasureApp()
@@ -506,7 +542,7 @@ def main():
     dataStruct.startElapsedTime()
     dataStruct.getZerosFromFile()
     qmc.setZero(dataStruct.getZeros())
-
+    
     while True:
         #start = time.time()											# For debugging
 
@@ -515,11 +551,15 @@ def main():
         qmc.setZero(dataStruct.getZeros())
         #qmc.ConsolePrint(dataStruct.getAxis())							# For debugging
 
-        dataGraph(dataStruct.getAxis(), dataStruct.getElapsedTime())
-
-        aux = app.getHoldStatus()
-        if aux:
+        axisData = dataStruct.getAxis()
+        dataGraph(axisData, dataStruct.getElapsedTime())
+        if dataStruct.getSaveDataStatus():
+            SaveMeasureData(axisData)
+            
+		# if the user press the hold button
+        if app.getHoldStatus():
             app.frames[PageOne].refreshLabel()
+            
         winUpdate (app)
 
         #end = time.time()												# For debugging
