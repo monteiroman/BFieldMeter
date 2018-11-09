@@ -1,5 +1,7 @@
 # Install -> Matplotlib
 #         -> Smbus
+#         -> PIL for showing the image at the start. For install it do:
+#               sudo apt-get install python3-pil python3-pil.imagetk
 
 #RPi Pinouts
     #I2C Pins
@@ -18,6 +20,7 @@ from matplotlib import style
 import tkinter as tk
 from tkinter import ttk, font
 from tkinter import *
+from PIL import ImageTk, Image
 
 #import pandas as pd
 #import numpy as np
@@ -79,6 +82,8 @@ class BMeasureApp(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame(StartPage)
+        time.sleep(4)
+        self.show_frame(PageOne)
         
         self.holdStatus = True
 
@@ -122,9 +127,14 @@ class StartPage(tk.Frame):
         label = tk.Label(self, text="de la facultad regional Buenos Aires de la UTN.", font=MEDIUM_FONT)
         label.pack(pady=10,padx=10)
 
-        button = ttk.Button(self, text="Ir al medidor", style='my.TButton',
-                            command=lambda: controller.show_frame(PageOne))
-        button.pack()
+        # If we want the start button
+        #button = ttk.Button(self, text="Ir al medidor", style='my.TButton',
+                            #command=lambda: controller.show_frame(PageOne))
+        #button.pack()
+        
+        self.img = ImageTk.PhotoImage(Image.open("/home/pi/medidor_campo_b/sources/pictures/logo1.png"))
+        self.panel = Label(self, image = self.img)
+        self.panel.pack()
 
 
 
@@ -151,7 +161,7 @@ class PageOne(tk.Frame):
         self.msg_saveStatus = StringVar()
         self.msg_saveStatus.set("    Listo para guardar")
 
-        self.separator = ttk.Label(self.valuesFrame, text="----------------", font=LARGE_FONT)
+        self.separator = ttk.Label(self.valuesFrame, text="--------------------", font=LARGE_FONT)
         self.separator.grid(row=1, column=0, sticky="nsew")
         self.labelX = ttk.Label(self.valuesFrame, textvariable=self.msg_x, font=MEDIUM_FONT)
         self.labelX.grid(row=2, column=0, sticky="nsew")
@@ -465,14 +475,21 @@ def animate(i):
 
 
 def saveZeros(x, y, z):
-    zeroFile = open("/home/pi/medidor_campo_b/zeros.txt", "w")
+    zeroFile = open("/home/pi/medidor_campo_b/zeros.txt", "w+")
     zeroFile.write(str(x) + "," + str(y) + "," + str(z))
     zeroFile.close()
 
 
 
 def readZerosFromFile ():
-    zeroFile = open("/home/pi/medidor_campo_b/zeros.txt", "r")
+    try:
+        zeroFile = open("/home/pi/medidor_campo_b/zeros.txt", "r")
+    except:
+        zeroFile = open("/home/pi/medidor_campo_b/zeros.txt", "w+")
+        zeroFile.write("0,0,0")
+        zeroFile.close()
+        zeroFile = open("/home/pi/medidor_campo_b/zeros.txt", "r")
+    
     zeroString = zeroFile.read()
 
     x,y,z = zeroString.split(",")
